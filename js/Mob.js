@@ -17,7 +17,6 @@ export default class Mob {
     isDead(){
         return (this.health <= 0);
     }
-
     getXpToGive(){
         return this.xp_to_give;
     }
@@ -42,7 +41,7 @@ export default class Mob {
 
     attackPlayer(playerMesh){
 
-        let damage = Math.max(0,Math.floor(this.attack - playerMesh.getDefense()/4));
+        let damage = Math.max(0,Math.floor(this.attack  - (- (this.attack/2) + Math.random() * this.attack) - playerMesh.getDefense()/4));
 
         console.log(this.attack);
         console.log(playerMesh.getDefense());
@@ -51,13 +50,19 @@ export default class Mob {
     }
 
     takeDamage(damage){
-        console.log("You hit a " + this.name + " and make " + damage + "to it");
-        if (!this.isDead() && damage >0){
-            this.health -= damage;
+        if (!this.isDead()){
+            console.log("You hit a " + this.name + " and make " + damage + " to it");
+            if (damage > 0)
+                this.health -= damage;
+            if(this.health < 0){
+                this.health = 0;
+            }
         }
+        
     }
 
     giveXp(playerMesh){
+        if (this.isDead()){
             //ne gagne plus d'xp si le joueur est plus haut niveau d'au moins 3 level
             let diff_level = playerMesh.getLevel() - this.level;
             let xp;
@@ -73,8 +78,16 @@ export default class Mob {
             playerMesh.addXp(xp);
             console.log("You earned " + xp + " experience points");
     }
+}
     
-    
+    getStats(){
+        console.log("Ennemy name is " + this.name);
+        console.log("Ennemy level is " + this.level);
+        console.log("Ennemy brut attack is " + this.attack);
+        console.log("Ennemy brut defense is " + this.defense);
+        console.log("Ennemy remaining health is " + this.health);
+    }
+
     createBoundingBox() {
         let bounder = new BABYLON.Mesh.CreateBox("bounder", 1, this.scene);
         let bounderMaterial = new BABYLON.StandardMaterial("bounderMaterial", this.scene);

@@ -1,6 +1,7 @@
 import Mob from "./Mob.js"
 
 let player;
+let boss;
 
 let canvas;
 let health_bar;
@@ -13,7 +14,7 @@ let inputStates = {};
 let mobs = [];
 
 let life_by_level = [500, 550, 600, 650,700, 750, 800, 850, 1000]; 
-let level_xp = [50, 100, 125, 175, 250, 325, 425, 550, 750, 1000];
+let level_xp = [1000, 1300, 1650, 2450, 4575, 6700, 8500, 9000, 11250, 25000];
 
 window.onload = map;
 
@@ -23,6 +24,7 @@ function map(){
     
     create_Player_UI();
     create_Player_XP_UI();
+    
     
     health_bar = document.querySelector("#health_bar");
     xp_bar = document.querySelector("#xp_bar");
@@ -42,8 +44,9 @@ function map(){
     scene.toRender = () => {
 
         player = scene.getMeshByName("Jolleen");
+        boss = scene.getMeshByName("bossM")
 
-        if (player){
+        if (player && boss){
             if (checkC){ //Pour l'appeler que 1 fois
                 checkCollisions(player, mobs);
                 checkC = false;
@@ -54,16 +57,23 @@ function map(){
                 scene.activeCamera = followCamera;
                 cameraset = true;
             }
+
+            showStats(player);
+
             update_health_bar(health_bar, player);
             update_level(level_of_player, player);
             update_xp_bar(xp_bar, player);
             
+            
             player.move();
             player.checkBounderPosition();
             player.shoot();
+            boss.shoot(player);
         
             player.changeLevel();
             player.die();
+        
+            
             //console.log("xp : " + player.getXp() + " lvl : " + player.getLevel());
             //console.log("health : " + player.getHealth());
 
@@ -233,6 +243,7 @@ function createPlayer(scene){
 
     function onJoleenImported(meshes, particleSystems, skeletons) {
         let player = meshes[0];
+        let default_position = new BABYLON.Vector3(150,162, -1000); 
         let playerMaterial = new BABYLON.StandardMaterial("playerTexture", scene);
         playerMaterial.diffuseTexture = new BABYLON.Texture("models/Persos/Jolleen_Diffuse.png");
         playerMaterial.emissiveTexture = new BABYLON.Texture("models/Persos/Jolleen_Glossiness.png");
@@ -243,15 +254,9 @@ function createPlayer(scene){
         player.death = false;
         player.walk = false;
         player.name = "Jolleen";
-        //Vector3 {_isDirty: false, _x: 151.51403794945372, _y: 161.05673460784308, _z: -947.673625129302}
-        /*   
-        player.position.x = 152;
-        player.position.z = -950;
-        player.position.y = 162;
-        */
-        player.position.x = 150; //3200 si on veut etre sur l'ile
-        player.position.z = -1000; //idem 3200
-        player.position.y = 162;
+
+        player.position = default_position;
+
         player.material = playerMaterial;
         
         //Player statistics
@@ -259,7 +264,7 @@ function createPlayer(scene){
         player.level = 1;
         player.xp = 0;
         player.attack = 100;
-        player.defense = 100;
+        player.defense = 80;
         player.speed = 8;
         player.frontVector = new BABYLON.Vector3(0, 0, -1);
 
@@ -342,6 +347,13 @@ function createPlayer(scene){
             if (player.position.y <= -88)
                 player.takeDamage(life_by_level[player.level] / 25);
         }
+        player.getStats= () => {
+            console.log("Current Level : " + player.level);
+            console.log("Current Health: " + player.health);
+            console.log("Current Attack : " + player.attack);
+            console.log("CurrentDefense : " + player.defense);
+
+        }
 
         player.takeDamage = (damage) =>{
             if(player.health >0 && damage >0)  
@@ -361,7 +373,7 @@ function createPlayer(scene){
             }
         }
         player.attackMob = (mobMesh)=> {
-            mobMesh.Mob.takeDamage(player.attack - 0.25 * mobMesh.Mob.getDefense());
+            mobMesh.Mob.takeDamage(Math.floor(player.attack - (-player.attack/2 + Math.random() * player.attack) - 0.25 * mobMesh.Mob.getDefense()));
         }
 
         player.die = () => {
@@ -370,6 +382,15 @@ function createPlayer(scene){
                 player.death = true;
                 player.changeState("death");
                 player.setXp(0);
+                
+                // Respawn du joueur
+                setTimeout(() => {
+                    player.death = false;
+                    player.changeState("idle");
+                    player.health = life_by_level[player.getLevel() - 1];
+                    player.position = new BABYLON.Vector3(150,162, -1000); 
+                }, 1000 * 5)
+                
             }
         }
     
@@ -416,7 +437,7 @@ function createPlayer(scene){
                     player.walk = false;
             }
         
-        }   
+        } 
         let bounderT = new BABYLON.Mesh.CreateBox("bounder", 10, scene);
         let bounderMaterial = new BABYLON.StandardMaterial("bounderMaterial", scene);
         bounderMaterial.alpha = 0.4;
@@ -511,6 +532,8 @@ function createPlayer(scene){
             myParticleSystem.start(); //Starts the emission of particles
         }
     };    
+
+    return player;
 }
 
 function createMobs(scene){  
@@ -559,7 +582,9 @@ function createMobs(scene){
         crabeM.name ="crabeM";
         crabeM.material = mobMaterial;
         
-        let crabe = new Mob(crabeM,"crabe",3,3,20,5,250,25,scene);
+        let crabe = new Mob(crabeM,"crabe",1,3,75,50,250,25,scene);
+        
+
         crabeM.position.x = 1000 + Math.random()*1000;
         crabeM.position.z = 1000 + Math.random()*1000;
         crabeM.material = mobMaterial;
@@ -579,10 +604,10 @@ function createMobs(scene){
         batM.position.z = 2100 + Math.random()*700;
         batM.material = mobMaterial;
         mobs.push(batM)
-        let bat = new Mob(batM,"bat",4,3,20,5,250,50,scene);
+        let bat = new Mob(batM,"bat",2,3,75,60,400,50,scene);
 
         createBox(batM);
-        cloneMobs(batM.name,batM,10,-400,1000,2100,700);
+        cloneMobs(batM.name,batM,15,-400,1000,2100,700);
     };
     
     function onCactusImported(meshes, particleSystems, skeletons) {  
@@ -595,7 +620,7 @@ function createMobs(scene){
         cactusM.position.z = -1500 + Math.random()*1400;
         cactusM.material = mobMaterial;
         mobs.push(cactusM)
-        let cactus = new Mob(cactusM,"cactus",5,3,20,5,250,75,scene);
+        let cactus = new Mob(cactusM,"cactus",3,3,200,75,150,75,scene);
 
         createBox(cactusM);
         cloneMobs(cactusM.name,cactusM,10, -3200,2200,-1500,1400);
@@ -611,9 +636,9 @@ function createMobs(scene){
         chickenM.position.z = 750 + Math.random()*2250;
         chickenM.material = mobMaterial;
         mobs.push(chickenM)
-        let chicken = new Mob(chickenM,"chicken",7,3,20,5,250,100,scene);
+        let chicken = new Mob(chickenM,"chicken",4,3,150,80,300,100,scene);
         createBox(chickenM)
-        cloneMobs(chickenM.name,chickenM,10,-1900,-900,750,2250);
+        cloneMobs(chickenM.name,chickenM,20,-1900,-900,750,2250);
     };
 
     function onDemonImported(meshes, particleSystems, skeletons) {  
@@ -626,9 +651,9 @@ function createMobs(scene){
         demonM.position.z = -3300 + Math.random()*1800;
         demonM.material = mobMaterial;
         mobs.push(demonM)
-        let demon = new Mob(demonM,"demon",8,3,20,5,250,150,scene);
+        let demon = new Mob(demonM,"demon",7,3,250,250,1000,150,scene);
         createBox(demonM);
-        cloneMobs(demonM.name,demonM,10,-1900,1800,-3300,1800);
+        cloneMobs(demonM.name,demonM,20,-1900,1800,-3300,1800);
     };
 
     function onMonsterImported(meshes, particleSystems, skeletons) {  
@@ -641,9 +666,9 @@ function createMobs(scene){
         monsterM.position.z = -3300 + Math.random()*900;
         monsterM.material = mobMaterial;
         mobs.push(monsterM)
-        let monster = new Mob(monsterM,"monster",9,3,20,5,250,175,scene);
+        let monster = new Mob(monsterM,"monster",7,3,100,280,250,175,scene);
         createBox(monsterM);
-        cloneMobs(monsterM.name,monsterM,10,550,1500,-3300,900);
+        cloneMobs(monsterM.name,monsterM,25,550,1500,-3300,900);
     };
 
     function onTreeImported(meshes, particleSystems, skeletons) {  
@@ -656,9 +681,9 @@ function createMobs(scene){
         treeM.position.z = -2100 + Math.random()*2900;
         treeM.material = mobMaterial;
         mobs.push(treeM)
-        let tree = new Mob(treeM,"tree",10,3,20,5,250,200, scene);
+        let tree = new Mob(treeM,"tree",8,3,200,180,4000,200, scene);
         createBox(treeM);
-        cloneMobs(treeM.name,treeM,10,2000,600,-2100,2900);
+        cloneMobs(treeM.name,treeM,30,2000,600,-2100,2900);
     };
 
     function onBossImported(meshes, particleSystems, skeletons) {  
@@ -666,14 +691,84 @@ function createMobs(scene){
         let bossMaterial = new BABYLON.StandardMaterial("bossTexture", scene);
         bossMaterial.diffuseTexture = new BABYLON.Texture("models/Persos/monster_Texture.png");
         bossM.scaling = new BABYLON.Vector3(100, 100, 100); 
-        bossM.name ="monsterM";
+        bossM.name ="bossM";
         bossM.position.x = 2745;
         bossM.position.z = 3495;
         bossM.material = bossMaterial;
 
-        let boss = new Mob(bossM,"monster",12,5,300,200,250,300,scene);
+        let boss = new Mob(bossM,"boss",12,5,350,400,8000,400,scene);
+
         createBox(bossM);
         mobs.push(bossM);
+
+        bossM.frontVector1 = new BABYLON.Vector3(0, 0, 1);
+        bossM.frontVector2 = new BABYLON.Vector3(0, 0, -1);
+        bossM.frontVector3 = new BABYLON.Vector3(1, 0, 0);
+        bossM.frontVector4 = new BABYLON.Vector3(-1, 0, 0);
+        bossM.canShoot = true;
+        bossM.shootAfter = 3; // in seconds
+
+        bossM.shoot = (joueur) => {
+
+            if(!bossM.canShoot) return;
+    
+            // ok, we fire, let's put the above property to false
+            bossM.canShoot = false;
+    
+            // let's be able to fire again after a while
+            setTimeout(() => {
+                bossM.canShoot = true;
+            }, 1000 * bossM.shootAfter)
+            let pos = bossM.position;
+            let powerOfFire = 400;
+            let azimuth = 0.2; 
+
+            // Create a 4 shoots
+            let shoot1 = BABYLON.MeshBuilder.CreateSphere("shoot", {diameter: 20, segments: 32}, scene);
+            shoot1.material = new BABYLON.StandardMaterial("Fire", scene);
+            shoot1.material.diffuseTexture = new BABYLON.Texture("assets/lave.jpg", scene);
+            shoot1.position = new BABYLON.Vector3(pos.x, pos.y+15, pos.z);
+            shoot1.position.addInPlace(bossM.frontVector1.multiplyByFloats(10, 10, 10));
+            shoot1.physicsImpostor = new BABYLON.PhysicsImpostor(shoot1,BABYLON.PhysicsImpostor.SphereImpostor, { mass: 2 }, scene);    
+            let aimForceVector1 = new BABYLON.Vector3(bossM.frontVector1.x*powerOfFire, (bossM.frontVector1.y+azimuth)*powerOfFire,bossM.frontVector1.z*powerOfFire);
+            shoot1.physicsImpostor.applyImpulse(aimForceVector1,shoot1.getAbsolutePosition());
+
+            let shoot2 = BABYLON.MeshBuilder.CreateSphere("shoot", {diameter: 20, segments: 32}, scene);
+            shoot2.material = new BABYLON.StandardMaterial("Fire", scene);
+            shoot2.material.diffuseTexture = new BABYLON.Texture("assets/lave.jpg", scene);
+            shoot2.position = new BABYLON.Vector3(pos.x, pos.y+15, pos.z);
+            shoot2.position.addInPlace(bossM.frontVector2.multiplyByFloats(10, 10, 10));
+            shoot2.physicsImpostor = new BABYLON.PhysicsImpostor(shoot2,BABYLON.PhysicsImpostor.SphereImpostor, { mass: 2 }, scene);    
+            let aimForceVector2 = new BABYLON.Vector3(bossM.frontVector2.x*powerOfFire, (bossM.frontVector2.y+azimuth)*powerOfFire,bossM.frontVector2.z*powerOfFire);
+            shoot2.physicsImpostor.applyImpulse(aimForceVector2,shoot2.getAbsolutePosition());
+
+            let shoot3 = BABYLON.MeshBuilder.CreateSphere("shoot", {diameter: 20, segments: 32}, scene);
+            shoot3.material = new BABYLON.StandardMaterial("Fire", scene);
+            shoot3.material.diffuseTexture = new BABYLON.Texture("assets/lave.jpg", scene);
+            shoot3.position = new BABYLON.Vector3(pos.x, pos.y+15, pos.z);
+            shoot3.position.addInPlace(bossM.frontVector3.multiplyByFloats(10, 10, 10));
+            shoot3.physicsImpostor = new BABYLON.PhysicsImpostor(shoot3,BABYLON.PhysicsImpostor.SphereImpostor, { mass: 2 }, scene);    
+            let aimForceVector3 = new BABYLON.Vector3(bossM.frontVector3.x*powerOfFire, (bossM.frontVector3.y+azimuth)*powerOfFire,bossM.frontVector3.z*powerOfFire);
+            shoot3.physicsImpostor.applyImpulse(aimForceVector3,shoot3.getAbsolutePosition());
+
+            let shoot4 = BABYLON.MeshBuilder.CreateSphere("shoot", {diameter: 20, segments: 32}, scene);
+            shoot4.material = new BABYLON.StandardMaterial("Fire", scene);
+            shoot4.material.diffuseTexture = new BABYLON.Texture("assets/lave.jpg", scene);
+            shoot4.position = new BABYLON.Vector3(pos.x, pos.y+15, pos.z);
+            shoot4.position.addInPlace(bossM.frontVector4.multiplyByFloats(10, 10, 10));
+            shoot4.physicsImpostor = new BABYLON.PhysicsImpostor(shoot4,BABYLON.PhysicsImpostor.SphereImpostor, { mass: 2 }, scene);    
+            let aimForceVector4 = new BABYLON.Vector3(bossM.frontVector4.x*powerOfFire, (bossM.frontVector4.y+azimuth)*powerOfFire,bossM.frontVector4.z*powerOfFire);
+            shoot4.physicsImpostor.applyImpulse(aimForceVector4,shoot4.getAbsolutePosition());
+
+            setTimeout(() => {
+                shoot1.dispose();
+                shoot2.dispose();
+                shoot3.dispose();
+                shoot4.dispose();
+            }, 3000)
+
+            //checkCollisionsC(shoot,joueur);
+        }
     };
 
     return mobs;
@@ -720,7 +815,6 @@ function followGround(meshes,s){
     return groundHeight;
 }
 
-
 function createBox(meshes){
 
     let bounder = new BABYLON.Mesh.CreateBox("bounder", 10, scene);
@@ -763,7 +857,7 @@ function addActionManager(mesh, ennemy) {
                 parameter: ennemyBBox
             }, 
             function(){ 
-                console.log("COLLISION !!!")
+                //console.log("COLLISION !!!")
                 ennemy.Mob.attackPlayer(mesh);
             }
         )
@@ -796,8 +890,8 @@ window.addEventListener('keydown', (event) => {
         inputStates.space = true;
     } else if (event.key === "Shift") {
         inputStates.shift = true;
-    } else if (event.key === "o") {
-        inputStates.o = true;
+    } else if (event.key === "i") {
+        inputStates.i = true;
     }
 }, false);
 
@@ -815,8 +909,8 @@ window.addEventListener('keyup', (event) => {
         inputStates.space = false;
     } else if (event.key === "Shift") {
         inputStates.shift = false;
-    } else if (event.key === "o") {
-        inputStates.o = false;
+    } else if (event.key === "i") {
+        inputStates.i = false;
     }
 }, false);
 
@@ -896,18 +990,19 @@ function create_Player_XP_UI(){
     document.body.appendChild(div_progress_xp);
 }
 
+
 function update_health_bar(health_bar, playerMesh){
     let max_life = life_by_level[playerMesh.getLevel()-1];
     let percent = playerMesh.getHealth() / max_life *100;
-    if (percent <= 25 ){
+    if (percent <= 25 )
         health_bar.style.backgroundColor= "red";
-    }
-    else if (percent <= 50 ){
+    else if (percent <= 50 )
         health_bar.style.backgroundColor= "orange";
-    }
-    else if (percent <= 75 ){
+    else if (percent <= 75 )
         health_bar.style.backgroundColor= "yellow";
-    }
+    else
+        health_bar.style.backgroundColor= "green";
+
     health_bar.style.width = percent + "%";
     health_bar.innerHTML = playerMesh.getHealth();
 }
@@ -987,8 +1082,6 @@ function addActionManagerC(mesh, ennemy) {
                 parameter: ennemy.bounder
             }, 
             function(){ 
-                console.log("SHOOOTTT !!!")
-                
                 if(!ennemy.Mob.isDead()){
                     player.attackMob(ennemy);
                 }
@@ -1005,4 +1098,48 @@ function addActionManagerC(mesh, ennemy) {
             }
         )
     );
+}
+
+function showStats(mesh){
+    if (inputStates.i){
+        mesh.getStats();
+    }
+}
+
+function attackP(meshe,target) {
+    // as move can be called even before the bbox is ready.
+    //if (!meshe.bounder) return;
+    // let's put the dude at the BBox position. in the rest of this
+    // method, we will not move the dude but the BBox instead
+    meshe.position = new BABYLON.Vector3(
+    meshe.bounder.position.x,
+    meshe.bounder.position.y,
+    meshe.bounder.position.z
+    );
+    // follow the tank
+    //let jolleen = scene.getMeshByName("Jolleen");
+    // let's compute the direction vector that goes from Dude to the tank
+    let direction = target.position.subtract(meshe.position);
+    let distance = direction.length(); // we take the vector that is not normalized, not the dir vector
+    //console.log(distance);
+    let dir = direction.normalize();
+    // angle between Dude and tank, to set the new rotation.y of the Dude so that he will look towards the tank
+    // make a drawing in the X/Z plan to uderstand....
+    let alpha = Math.atan2(-dir.x, -dir.z);
+    // If I uncomment this, there are collisions. This is strange ?
+    //this.bounder.rotation.y = alpha;
+
+    meshe.rotation.y = alpha;
+
+    // let make the Dude move towards the tank
+    // first let's move the bounding box mesh
+    if (distance > 30) {
+      //a.restart();
+      // Move the bounding box instead of the dude....
+      meshe.bounder.moveWithCollisions(
+        dir.multiplyByFloats(meshe.Mob.speed, meshe.Mob.speed, meshe.Mob.speed)
+      );
+    } else {
+      //a.pause();
+    }
 }
