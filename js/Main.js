@@ -12,6 +12,8 @@ let scene;
 let dimPlan = 8000;
 let inputStates = {};
 let mobs = [];
+let shoots = [];
+let checkC = true;
 
 let life_by_level = [500, 550, 600, 650,700, 750, 800, 850, 1000]; 
 let level_xp = [1000, 1300, 1650, 2450, 4575, 6700, 8500, 9000, 11250, 25000];
@@ -37,18 +39,17 @@ function map(){
     var physicsPlugin = new BABYLON.CannonJSPlugin();
     scene.enablePhysics(gravityVector, physicsPlugin);
     
-
     let cameraset  = false ;
-    let checkC = true;
 
     scene.toRender = () => {
 
         player = scene.getMeshByName("Jolleen");
-        boss = scene.getMeshByName("bossM")
+        boss = scene.getMeshByName("bossM");
 
         if (player && boss){
             if (checkC){ //Pour l'appeler que 1 fois
                 checkCollisions(player, mobs);
+                //mobUI(mobs);
                 checkC = false;
             }
             if (!cameraset){
@@ -59,27 +60,18 @@ function map(){
             }
 
             showStats(player);
-
             update_health_bar(health_bar, player);
             update_level(level_of_player, player);
             update_xp_bar(xp_bar, player);
             
-            
             player.move();
+            moveMob(player);
             player.checkBounderPosition();
             player.shoot();
             boss.shoot(player);
         
             player.changeLevel();
             player.die();
-        
-            
-            //console.log("xp : " + player.getXp() + " lvl : " + player.getLevel());
-            //console.log("health : " + player.getHealth());
-
-           /* if (player.getLevel() < 3){
-                crabe.Mob.takeDamage(100);
-            }*/
         }
 
         scene.render();
@@ -185,7 +177,7 @@ function createGround(scene, dimplan) {
 
     const groundOptions = { width:dimplan, height:dimplan, subdivisions:500, minHeight:-100, maxHeight:250};
 
-    const ground = BABYLON.MeshBuilder.CreateGroundFromHeightMap("gdhm","images/hmap20.png",groundOptions, scene);
+    const ground = BABYLON.MeshBuilder.CreateGroundFromHeightMap("gdhm","images/hmap21.png",groundOptions, scene);
 
     var textureTask = assetsManager.addTextureTask("image task", "textures/test/lambert1_Base_Color.png");
     var textureTask2 = assetsManager.addTextureTask("image task2", "textures/test/heightmap_lambert1_Glossiness.png");
@@ -345,7 +337,7 @@ function createPlayer(scene){
 
         player.drown = ()=>{
             if (player.position.y <= -88)
-                player.takeDamage(life_by_level[player.level] / 25);
+                player.takeDamage(life_by_level[player.getLevel() -1] / 25);
         }
         player.getStats= () => {
             console.log("Current Level : " + player.level);
@@ -454,7 +446,7 @@ function createPlayer(scene){
         bounderT.scaling.y = (max._y - min._y) * player.scaling.y*0.12;
         bounderT.scaling.z = (max._z - min._z) * player.scaling.z*0.12;
 
-        bounderT.isVisible = true;
+        bounderT.isVisible = false;
         bounderT.position.y += (max._y - min._y) * player.scaling.y/3;
         bounderT.checkCollisions = true;
 
@@ -582,7 +574,7 @@ function createMobs(scene){
         crabeM.name ="crabeM";
         crabeM.material = mobMaterial;
         
-        let crabe = new Mob(crabeM,"crabe",1,3,75,50,250,25,scene);
+        let crabe = new Mob(crabeM,"crabe",1,4,75,50,250,25,scene);
         
 
         crabeM.position.x = 1000 + Math.random()*1000;
@@ -604,7 +596,7 @@ function createMobs(scene){
         batM.position.z = 2100 + Math.random()*700;
         batM.material = mobMaterial;
         mobs.push(batM)
-        let bat = new Mob(batM,"bat",2,3,75,60,400,50,scene);
+        let bat = new Mob(batM,"bat",2,4,75,60,400,50,scene);
 
         createBox(batM);
         cloneMobs(batM.name,batM,15,-400,1000,2100,700);
@@ -620,7 +612,7 @@ function createMobs(scene){
         cactusM.position.z = -1500 + Math.random()*1400;
         cactusM.material = mobMaterial;
         mobs.push(cactusM)
-        let cactus = new Mob(cactusM,"cactus",3,3,200,75,150,75,scene);
+        let cactus = new Mob(cactusM,"cactus",3,4,200,75,150,75,scene);
 
         createBox(cactusM);
         cloneMobs(cactusM.name,cactusM,10, -3200,2200,-1500,1400);
@@ -636,7 +628,7 @@ function createMobs(scene){
         chickenM.position.z = 750 + Math.random()*2250;
         chickenM.material = mobMaterial;
         mobs.push(chickenM)
-        let chicken = new Mob(chickenM,"chicken",4,3,150,80,300,100,scene);
+        let chicken = new Mob(chickenM,"chicken",4,4,150,80,300,100,scene);
         createBox(chickenM)
         cloneMobs(chickenM.name,chickenM,20,-1900,-900,750,2250);
     };
@@ -651,7 +643,7 @@ function createMobs(scene){
         demonM.position.z = -3300 + Math.random()*1800;
         demonM.material = mobMaterial;
         mobs.push(demonM)
-        let demon = new Mob(demonM,"demon",7,3,250,250,1000,150,scene);
+        let demon = new Mob(demonM,"demon",7,4,250,250,1000,150,scene);
         createBox(demonM);
         cloneMobs(demonM.name,demonM,20,-1900,1800,-3300,1800);
     };
@@ -666,7 +658,7 @@ function createMobs(scene){
         monsterM.position.z = -3300 + Math.random()*900;
         monsterM.material = mobMaterial;
         mobs.push(monsterM)
-        let monster = new Mob(monsterM,"monster",7,3,100,280,250,175,scene);
+        let monster = new Mob(monsterM,"monster",7,4,100,280,250,175,scene);
         createBox(monsterM);
         cloneMobs(monsterM.name,monsterM,25,550,1500,-3300,900);
     };
@@ -681,7 +673,7 @@ function createMobs(scene){
         treeM.position.z = -2100 + Math.random()*2900;
         treeM.material = mobMaterial;
         mobs.push(treeM)
-        let tree = new Mob(treeM,"tree",8,3,200,180,4000,200, scene);
+        let tree = new Mob(treeM,"tree",8,4,200,180,4000,200, scene);
         createBox(treeM);
         cloneMobs(treeM.name,treeM,30,2000,600,-2100,2900);
     };
@@ -696,7 +688,7 @@ function createMobs(scene){
         bossM.position.z = 3495;
         bossM.material = bossMaterial;
 
-        let boss = new Mob(bossM,"boss",12,5,350,400,8000,400,scene);
+        let boss = new Mob(bossM,"boss",12,5,350,400,8000,1000,scene);
 
         createBox(bossM);
         mobs.push(bossM);
@@ -760,6 +752,7 @@ function createMobs(scene){
             let aimForceVector4 = new BABYLON.Vector3(bossM.frontVector4.x*powerOfFire, (bossM.frontVector4.y+azimuth)*powerOfFire,bossM.frontVector4.z*powerOfFire);
             shoot4.physicsImpostor.applyImpulse(aimForceVector4,shoot4.getAbsolutePosition());
 
+            shoots.push(shoot1,shoot2,shoot3,shoot4);
             setTimeout(() => {
                 shoot1.dispose();
                 shoot2.dispose();
@@ -767,7 +760,7 @@ function createMobs(scene){
                 shoot4.dispose();
             }, 3000)
 
-            //checkCollisionsC(shoot,joueur);
+            checkCollisionsBP(bossM, shoots,joueur); 
         }
     };
 
@@ -833,7 +826,7 @@ function createBox(meshes){
         bounder.scaling.y = (max._y - min._y) * meshes.scaling.y*0.12;
         bounder.scaling.z = (max._z - min._z) * meshes.scaling.z*0.12;
 
-        bounder.isVisible = true;
+        bounder.isVisible = false;
         bounder.position.y += (max._y - min._y) * meshes.scaling.y/3;
         meshes.bounder = bounder;
 
@@ -891,7 +884,7 @@ window.addEventListener('keydown', (event) => {
     } else if (event.key === "Shift") {
         inputStates.shift = true;
     } else if (event.key === "i") {
-        inputStates.i = true;
+        inputStates.o = true;
     }
 }, false);
 
@@ -910,7 +903,7 @@ window.addEventListener('keyup', (event) => {
     } else if (event.key === "Shift") {
         inputStates.shift = false;
     } else if (event.key === "i") {
-        inputStates.i = false;
+        inputStates.o = false;
     }
 }, false);
 
@@ -1054,7 +1047,6 @@ function checkCollisionsO(meshes1, objet) {
 
 function cloneMobs(name,mesh,nombre,minX,maxX,minZ,maxZ){
     for (let i=0; i<nombre; i++){
-        console.log();
         var cloneM = mesh.clone(name + i);
         cloneM.position.x = minX + Math.random()*maxX;
         cloneM.position.z = minZ + Math.random()*maxZ;
@@ -1069,11 +1061,11 @@ function checkCollisionsC(meshes1, liste) {
     meshes1.actionManager = new BABYLON.ActionManager(scene);    
     for (var a=0;a<liste.length;a++){
         let ennemy = liste[a];
-        addActionManagerC(meshes1, ennemy);
+        addActionManagerC(meshes1, ennemy,true);
     }
 }
 
-function addActionManagerC(mesh, ennemy) {
+function addActionManagerC(mesh, ennemy,check) {
     let ennemyBBox = ennemy.bounder;
     mesh.actionManager.registerAction(
         new BABYLON.ExecuteCodeAction(
@@ -1087,12 +1079,11 @@ function addActionManagerC(mesh, ennemy) {
                 }
                 else {
                     ennemy.Mob.giveXp(player);
-                    ennemy.bounder.checkCollisions = false;
-                    ennemyBBox.position.y = -150;
+                    const index = mobs.indexOf(ennemy)
+                    mobs.splice(index,1)
+                    checkC = check;
                     ennemy.dispose();
-                    ennemy.bounder.dispose();
-                    
-                    console.log(ennemyBBox);
+                    ennemyBBox.dispose();
                 }
                 
             }
@@ -1101,45 +1092,53 @@ function addActionManagerC(mesh, ennemy) {
 }
 
 function showStats(mesh){
-    if (inputStates.i){
+    if (inputStates.o){
         mesh.getStats();
     }
 }
 
-function attackP(meshe,target) {
-    // as move can be called even before the bbox is ready.
-    //if (!meshe.bounder) return;
-    // let's put the dude at the BBox position. in the rest of this
-    // method, we will not move the dude but the BBox instead
-    meshe.position = new BABYLON.Vector3(
-    meshe.bounder.position.x,
-    meshe.bounder.position.y,
-    meshe.bounder.position.z
-    );
-    // follow the tank
-    //let jolleen = scene.getMeshByName("Jolleen");
-    // let's compute the direction vector that goes from Dude to the tank
-    let direction = target.position.subtract(meshe.position);
-    let distance = direction.length(); // we take the vector that is not normalized, not the dir vector
-    //console.log(distance);
-    let dir = direction.normalize();
-    // angle between Dude and tank, to set the new rotation.y of the Dude so that he will look towards the tank
-    // make a drawing in the X/Z plan to uderstand....
-    let alpha = Math.atan2(-dir.x, -dir.z);
-    // If I uncomment this, there are collisions. This is strange ?
-    //this.bounder.rotation.y = alpha;
-
-    meshe.rotation.y = alpha;
-
-    // let make the Dude move towards the tank
-    // first let's move the bounding box mesh
-    if (distance > 30) {
-      //a.restart();
-      // Move the bounding box instead of the dude....
-      meshe.bounder.moveWithCollisions(
-        dir.multiplyByFloats(meshe.Mob.speed, meshe.Mob.speed, meshe.Mob.speed)
-      );
-    } else {
-      //a.pause();
+function checkCollisionsBP(mesh, liste,joueur) {
+    //joueur.bounder.actionManager = new BABYLON.ActionManager(scene);    
+    for (var a=0;a<liste.length;a++){
+        let ball = liste[a];
+        addActionManagerBP(mesh,ball,joueur);
     }
 }
+
+function addActionManagerBP(mesh, ball,joueur) {
+    ball.actionManager = new BABYLON.ActionManager(scene);
+    ball.actionManager.registerAction(
+        new BABYLON.ExecuteCodeAction(
+            { 
+                trigger:BABYLON.ActionManager.OnIntersectionEnterTrigger, 
+                parameter: joueur.bounder
+            }, 
+            function(){ 
+                mesh.Mob.attackPlayer(joueur)
+            }
+        )
+    );
+}
+
+function moveMob(target){
+    mobs.forEach(element => {
+        if(element) element.Mob.moveM(element,target);
+    });
+}
+//affiche le niveau au dessus des mobs (bug à fix)
+function mobUI(mobs){
+    for(let i = 0; i < mobs.length; i++){
+        var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+        var label = new BABYLON.GUI.TextBlock();
+        label.text = "Lvl " + mobs[i].Mob.getLevel();
+        label.color = "rgb(0,0,0)";
+        label.fontSize = 10;
+        advancedTexture.addControl(label);
+        advancedTexture.isForeground = true;
+        label.linkWithMesh(mobs[i]);   
+        label.linkOffsetY = -50;
+    }
+
+}
+
+

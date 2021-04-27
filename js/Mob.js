@@ -62,7 +62,7 @@ export default class Mob {
     }
 
     giveXp(playerMesh){
-        if (this.isDead()){
+        //if (!this.isDead()){
             //ne gagne plus d'xp si le joueur est plus haut niveau d'au moins 3 level
             let diff_level = playerMesh.getLevel() - this.level;
             let xp;
@@ -77,8 +77,8 @@ export default class Mob {
             //console.log("DEBUG " + diff_level + " " + this.xp_give);
             playerMesh.addXp(xp);
             console.log("You earned " + xp + " experience points");
+        //}
     }
-}
     
     getStats(){
         console.log("Ennemy name is " + this.name);
@@ -111,5 +111,41 @@ export default class Mob {
         bounder.isVisible = true;
 
         return bounder;
+    }
+
+    moveM(mesh,target) {
+        // as move can be called even before the bbox is ready.
+        //if (!meshe.bounder) return;
+        // let's put the dude at the BBox position. in the rest of this
+        // method, we will not move the dude but the BBox instead
+        this.mobMeshes.position = new BABYLON.Vector3(
+        mesh.bounder.position.x,
+        mesh.bounder.position.y-20,
+        mesh.bounder.position.z
+        );
+        // follow the tank
+        //let jolleen = scene.getMeshByName("Jolleen");
+        // let's compute the direction vector that goes from Dude to the tank
+        let direction = target.position.subtract(this.mobMeshes.position);
+        let distance = direction.length(); // we take the vector that is not normalized, not the dir vector
+        //console.log(distance);
+        let dir = direction.normalize();
+        // angle between Dude and tank, to set the new rotation.y of the Dude so that he will look towards the tank
+        // make a drawing in the X/Z plan to uderstand....
+        let alpha = Math.atan2(-dir.x, -dir.z);
+        // If I uncomment this, there are collisions. This is strange ?
+        //this.bounder.rotation.y = alpha;
+    
+        this.mobMeshes.rotation.y = alpha;
+    
+        // let make the Dude move towards the tank
+        // first let's move the bounding box mesh
+        if (distance < 200 && distance > 50) {
+          //a.restart();
+          // Move the bounding box instead of the dude....
+          mesh.bounder.moveWithCollisions(dir.multiplyByFloats(this.speed, this.speed, this.speed));
+        } else {
+          //a.pause();
+        }
     }
 }

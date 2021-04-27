@@ -698,7 +698,7 @@ function createMobs(scene){
         let bossMaterial = new BABYLON.StandardMaterial("bossTexture", scene);
         bossMaterial.diffuseTexture = new BABYLON.Texture("models/Persos/monster_Texture.png");
         bossM.scaling = new BABYLON.Vector3(100, 100, 100); 
-        bossM.name = "monsterM";
+        bossM.name ="monsterM";
         bossM.position.x = 2745;
         bossM.position.z = 3495;
         bossM.material = bossMaterial;
@@ -707,6 +707,7 @@ function createMobs(scene){
         createBox(bossM);
         mobs.push(bossM);
     
+
     };
 
 
