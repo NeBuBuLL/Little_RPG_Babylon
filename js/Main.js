@@ -181,7 +181,7 @@ function createGround(scene, dimplan) {
 
     var textureTask = assetsManager.addTextureTask("image task", "textures/test/lambert1_Base_Color.png");
     var textureTask2 = assetsManager.addTextureTask("image task2", "textures/test/heightmap_lambert1_Glossiness.png");
-    var textureTask3 = assetsManager.addTextureTask("image task3", "textures/test/heightmap_lambert1_normal.png");
+    var textureTask3 = assetsManager.addTextureTask("image task3", "textures/test/heightmap_lambert1_Normal.png");
     var textureTask4 = assetsManager.addTextureTask("image task4", "textures/test/lambert1_roughness.jpg");
     var textureTask5 = assetsManager.addTextureTask("image task5", "textures/test/heightmap_lambert1_Specular.png");
 
