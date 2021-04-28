@@ -377,6 +377,7 @@ function createPlayer(scene){
                 
                 // Respawn du joueur
                 setTimeout(() => {
+                    deathAnim = scene.beginWeightedAnimation(skeletons[0], 0, 63, 0.0,false, 0.15);
                     player.death = false;
                     player.changeState("idle");
                     player.health = life_by_level[player.getLevel() - 1];
